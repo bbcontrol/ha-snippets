@@ -1,0 +1,317 @@
+alias: Ubisys J1 calibration
+description: >
+  Execute calibration procedure for Ubisys J1 connected to lift & tilt window shades.
+  ⚠️ The procedure currently depends on ZHA Toolkit. https://github.com/mdeweerd/zha-toolkit. Please install it first. ⚠️
+  See: https://www.ubisys.de/wp-content/uploads/ubisys-j1-technical-reference.pdf.
+icon: mdi:window-shutter-cog
+mode: single
+fields:
+  device:
+    required: true
+    name: Device
+    description: The Ubisys J1 device to calibrate.
+    selector:
+      device:
+        integration: zha
+        manufacturer: ubisys
+        model: J1
+  # ieee:
+  #   name: IEEE address
+  #   description: Full IEEE address of Ubisys J1 device to calibrate.
+  tilt_time:
+    required: true
+    name: Tilt time
+    default: 50
+    description: Measured in number of full AC waves. In 50 Hz systems, 1 wave = 20ms.
+    selector:
+      number:
+        min: 10
+        max: 300
+        unit_of_measurement: AC waves
+  full_window_wait_time:
+    required: true
+    name: Open/close time
+    default: 70
+    description: How many seconds to wait before the cover CERTAINLY reaches top/bottom position.
+    selector:
+      number:
+        min: 20
+        max: 180
+        unit_of_measurement: seconds
+
+sequence:
+  - alias: Get IEEE address of the device
+    variables:
+      ieee: "{{ device_attr(device, 'identifiers') | list | first | last }}"
+
+    # Step 1:
+    # Write attribute 0x10F2:0x0000 (“WindowCoveringType”) accordingly.
+
+  - alias: 'Step 1: set window covering type to "tilt & lift"'
+    service: zha.set_zigbee_cluster_attribute
+    data:
+      cluster_type: in
+      ieee: "{{ ieee }}"
+      endpoint_id: 1
+      cluster_id: 0x0102
+      manufacturer: 0x10F2
+      attribute: 0x0000
+      value: 8 # tilt and lift
+
+    # Step 2
+    # Prepare calibration by setting these values:
+    # Write attribute 0x10F2:0x0010 (“InstalledOpenLimitLift”) as 0x0000 = 0cm.
+    # Write attribute 0x10F2:0x0011 (“InstalledClosedLimitLift”) as 0x00F0 = 240cm.
+    # Write attribute 0x10F2:0x0012 (“InstalledOpenLimitTilt”) as 0x0000 = 0°.
+    # Write attribute 0x10F2:0x0013 (“InstalledClosedLimitTilt”) as 0x0384 = 90.0°.
+    # Write attribute 0x10F2:0x1001 (“LiftToTiltTransitionSteps”) as 0xFFFF = invalid.
+    # Write attribute 0x10F2:0x1002 (“TotalSteps”) as 0xFFFF = invalid.
+    # Write attribute 0x10F2:0x1003 (“LiftToTiltTransitionSteps2”) as 0xFFFF = invalid.
+    # Write attribute 0x10F2:0x1004 (“TotalSteps2”) as 0xFFFF = invalid.
+
+  - alias: "Step 2: prepare calibration settings"
+    repeat:
+      count: 1
+      sequence:
+        - service: zha.set_zigbee_cluster_attribute
+          data:
+            cluster_type: in
+            ieee: "{{ ieee }}"
+            endpoint_id: 1
+            cluster_id: 0x0102
+            manufacturer: 0x10F2
+            attribute: 0x0010
+            value: 0x0000 # = 0cm
+        - service: zha.set_zigbee_cluster_attribute
+          data:
+            cluster_type: in
+            ieee: "{{ ieee }}"
+            endpoint_id: 1
+            cluster_id: 0x0102
+            manufacturer: 0x10F2
+            attribute: 0x0011
+            value: 0x00F0 # = 240cm
+        - service: zha.set_zigbee_cluster_attribute
+          data:
+            cluster_type: in
+            ieee: "{{ ieee }}"
+            endpoint_id: 1
+            cluster_id: 0x0102
+            manufacturer: 0x10F2
+            attribute: 0x0012
+            value: 0x0000 # = 0°
+        - service: zha.set_zigbee_cluster_attribute
+          data:
+            cluster_type: in
+            ieee: "{{ ieee }}"
+            endpoint_id: 1
+            cluster_id: 0x0102
+            manufacturer: 0x10F2
+            attribute: 0x0013
+            value: 0x0384 # = 90.0°
+        - service: zha_toolkit.attr_write
+          data:
+            ieee: "{{ ieee }}"
+            endpoint: 1
+            cluster: 0x0102
+            manf: 0x10F2
+            attribute: 0x1001
+            attr_val: 0xFFFF # = invalid
+        - service: zha_toolkit.attr_write
+          data:
+            ieee: "{{ ieee }}"
+            endpoint: 1
+            cluster: 0x0102
+            manf: 0x10F2
+            attribute: 0x1002
+            attr_val: 0xFFFF # = invalid
+        - service: zha_toolkit.attr_write
+          data:
+            ieee: "{{ ieee }}"
+            endpoint: 1
+            cluster: 0x0102
+            manf: 0x10F2
+            attribute: 0x1003
+            attr_val: 0xFFFF # = invalid
+        - service: zha_toolkit.attr_write
+          data:
+            ieee: "{{ ieee }}"
+            endpoint: 1
+            cluster: 0x0102
+            manf: 0x10F2
+            attribute: 0x1004
+            attr_val: 0xFFFF # = invalid
+        - delay: 2
+          alias: Wait for initial configuration to propagate
+
+    # Step 3
+    # Enter calibration mode:
+    # Write attribute 0x0017 (“Mode”) as 0x02.
+
+  - alias: "Step 3: enter calibration mode"
+    service: zha.set_zigbee_cluster_attribute
+    data:
+      cluster_type: in
+      ieee: "{{ ieee }}"
+      endpoint_id: 1
+      cluster_id: 0x0102
+      attribute: 0x0017
+      value: 0x02
+
+    # Step 4
+    # Send the “move down” command and “stop” after a few centimeters.
+    # This is to reach a starting position for calibration, which will allow J1 to detect the upper limit.
+
+  - alias: "Step 4: reach a starting position for calibration"
+    repeat:
+      count: 1
+      sequence:
+        - service: zha.issue_zigbee_cluster_command
+          data:
+            cluster_type: in
+            ieee: "{{ ieee }}"
+            command_type: server
+            endpoint_id: 1
+            cluster_id: 0x0102
+            command: 0x01 # = move down
+            params: {}
+        - delay: 2
+        - service: zha.issue_zigbee_cluster_command
+          data:
+            cluster_type: in
+            ieee: "{{ ieee }}"
+            command_type: server
+            endpoint_id: 1
+            cluster_id: 0x0102
+            command: 0x02 # = stop
+            params: {}
+
+    # Step 5
+    # Send the “move up” command. When the device reaches its top position, J1 will recognize the upper bound.
+
+  - alias: "Step 5: detect the upper limit"
+    repeat:
+      count: 1
+      sequence:
+        - service: zha.issue_zigbee_cluster_command
+          data:
+            cluster_type: in
+            ieee: "{{ ieee }}"
+            command_type: server
+            endpoint_id: 1
+            cluster_id: 0x0102
+            command: 0x00 # = move up
+            params: {}
+        - delay: "{{ full_window_wait_time }}"
+          alias: Wait until the top position is reached for sure
+
+    # Step 6
+    # After J1 has reached the top position and the motor has stopped, send the “move down” command. J1 will search for the lower bound and recognize the lower bound once it has been reached.
+  - alias: "Step 6: calibrate lower limit & number of steps down"
+    repeat:
+      count: 1
+      sequence:
+        - service: zha.issue_zigbee_cluster_command
+          data:
+            cluster_type: in
+            ieee: "{{ ieee }}"
+            command_type: server
+            endpoint_id: 1
+            cluster_id: 0x0102
+            command: 0x01 # = move down
+            params: {}
+        - delay: "{{ full_window_wait_time }}"
+          alias: Wait until the bottom position is reached for sure
+
+    # Step 7
+    # After J1 has reached the lower bound and the motor has stopped, send the “move up” command. J1 will search for the upper bound. Once the top position is reached, calibration of the total steps in both directions is complete.
+
+  - alias: "Step 7: calibrate number of steps up"
+    repeat:
+      count: 1
+      sequence:
+        - service: zha.issue_zigbee_cluster_command
+          data:
+            cluster_type: in
+            ieee: "{{ ieee }}"
+            command_type: server
+            endpoint_id: 1
+            cluster_id: 0x0102
+            command: 0x00 # = move up
+            params: {}
+        - delay: "{{ full_window_wait_time }}"
+          alias: Wait until it reaches the top position
+
+    # When calibration is complete attributes 0x10F2:0x1002 and 0x10F2:0x1004 are different from 0xFFFF and hold the times that J1 has measured for your physical setup consisting of motor and blind.
+    # The values can be close together (typically lift & tilt blinds match closely) or have significant differences (down-to-up takes e.g. 100% longer than up-to-down due to gravity).
+    # Instead of auto-calibration you can also write the values directly if you know them.
+
+    # Step 8
+    # In case of a tilt blind set attribute 0x10F2:0x1001 and 0x10F2:0x1003 to the time it takes for a lift-to-tilt transition (down) or a tilt-to-lift transition (up), respectively.
+    # Otherwise proceed with the next step.
+
+  - alias: "Step 8: set tilt times"
+    repeat:
+      count: 1
+      sequence:
+        - service: zha_toolkit.attr_write
+          data:
+            ieee: "{{ ieee }}"
+            endpoint: 1
+            cluster: 0x0102
+            manf: 0x10F2
+            attribute: 0x1001
+            attr_val: "{{ tilt_time }}" # the time it takes for a lift-to-tilt transition (down) - measured in number of full AC waves - 20ms = 1 step
+        - service: zha_toolkit.attr_write
+          data:
+            ieee: "{{ ieee }}"
+            endpoint: 1
+            cluster: 0x0102
+            manf: 0x10F2
+            attribute: 0x1003
+            attr_val: "{{ tilt_time }}" # the time it takes for a tilt-to-lift transition (up) - measured in number of full AC waves - 20ms = 1 step
+
+    # Step 9
+    # To leave calibration mode, clear bit #1 in the Mode attribute, e.g. write attribute 0x0017 as 0x00.
+  - alias: "Step 9: leave calibration mode"
+    repeat:
+      count: 1
+      sequence:
+        - service: zha.set_zigbee_cluster_attribute
+          data:
+            cluster_type: in
+            ieee: "{{ ieee }}"
+            endpoint_id: 1
+            cluster_id: 0x0102
+            attribute: 0x0017
+            value: 0x00
+        - delay: 2
+          alias: Wait for calibration mode end to propagate
+
+    # Hints
+    # Once you leave calibration mode, move the blind down a little and then move it up.
+    # When it reaches the top position the relevant positioning attributes (absolute and percentage) should read as 0 (lift & tilt).
+
+  - alias: "Appendix: reach upper limit to start reporting correct position"
+    repeat:
+      count: 1
+      sequence:
+        - service: zha.issue_zigbee_cluster_command
+          data:
+            cluster_type: in
+            ieee: "{{ ieee }}"
+            command_type: server
+            endpoint_id: 1
+            cluster_id: 0x0102
+            command: 0x01 # = move down
+            params: {}
+        - delay: 1
+        - service: zha.issue_zigbee_cluster_command
+          data:
+            cluster_type: in
+            ieee: "{{ ieee }}"
+            command_type: server
+            endpoint_id: 1
+            cluster_id: 0x0102
+            command: 0x00 # = move up
+            params: {}
