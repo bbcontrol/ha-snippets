@@ -1,0 +1,24 @@
+alias: Flux
+description: >-
+  Propagates Adaptive lighting state to light fixtures using raw Zigbee2MQTT
+  `{"color_temp": 123}` command. Leverages `execute_if_off` attribute, which
+  must be set in advance via MQTT. See also:
+  https://github.com/Koenkk/zigbee2mqtt/discussions/13015
+trigger:
+  - platform: state
+    entity_id:
+      - switch.adaptive_lighting_flux
+    attribute: color_temp_mired
+condition:
+  - condition: template
+    value_template: >-
+      {{ state_attr('switch.adaptive_lighting_flux', 'color_temp_mired') is not
+      none }}
+action:
+  - service: mqtt.publish
+    data:
+      topic: zigbee2mqtt/Všechna světla/set
+      payload_template: >
+        {"color_temp": {{ state_attr('switch.adaptive_lighting_flux',
+        'color_temp_mired') }}}
+mode: single
