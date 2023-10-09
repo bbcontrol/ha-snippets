@@ -1,0 +1,96 @@
+blueprint:
+  name: Hi/Lo light switch
+  description: Switch a light on/off by pressing a button.
+    Switch it on with higher intensity by holding the same button.
+  domain: automation
+  input:
+    button:
+      name: Push button
+      description:
+        Entity representing a physical push button (which restores its position
+        when released). It must emit a square signal on press.
+      selector:
+        entity:
+          domain: binary_sensor
+    light:
+      name: Light
+      selector:
+        entity:
+          domain: light
+    hold_threshold:
+      name: Hold threshold
+      description: Time to consider button is being held, instead of just pushed.
+      default: 1.0
+      selector:
+        number:
+          min: 0.05
+          max: 10
+          step: 0.05
+          unit_of_measurement: s
+    brightness_lo:
+      name: Brightness low value
+      default: 100
+      selector:
+        number:
+          min: 0
+          max: 255
+    brightness_hi:
+      name: Brightness high value
+      default: 255
+      selector:
+        number:
+          min: 0
+          max: 255
+
+mode: restart
+
+trigger:
+  - platform: state
+    entity_id: !input button
+    to: "on"
+    id: "press"
+  - platform: state
+    entity_id: !input button
+    to: "on"
+    for: !input hold_threshold
+    id: "hold"
+
+action:
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.id == 'press' }}"
+          - condition: state
+            entity_id: !input light
+            state: "off"
+        sequence:
+          - service: light.turn_on
+            entity_id: !input light
+            data:
+              brightness: !input brightness_lo
+
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.id == 'press' }}"
+          - condition: state
+            entity_id: !input light
+            state: "on"
+        sequence:
+          - wait_for_trigger:
+              - platform: state
+                entity_id: !input button
+                to: "off"
+                from: "on"
+            timeout: !input hold_threshold
+            continue_on_timeout: false
+          - service: light.turn_off
+            entity_id: !input light
+
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.id == 'hold' }}"
+        sequence:
+          - service: light.turn_on
+            entity_id: !input light
+            data:
+              brightness: !input brightness_hi
