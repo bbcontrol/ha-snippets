@@ -56,6 +56,16 @@ blueprint:
           max: 5
           step: 0.01
           unit_of_measurement: s
+    wait_step_length:
+      name: Wait step lenght
+      description: Length of pause after each transition step.
+      default: 0.1
+      selector:
+        number:
+          min: 0
+          max: 5
+          step: 0.01
+          unit_of_measurement: s
 
 mode: single
 
@@ -103,6 +113,7 @@ action:
                             transition: !input transition_step_length
                             brightness_step_pct: "{{ brightness_step_pct_negative }}"
                           entity_id: !input light
+                        - delay: !input wait_step_length
             default:
               # otherwise, dim up
               - repeat:
@@ -116,6 +127,7 @@ action:
                         transition: !input transition_step_length
                         brightness_step_pct: "{{ brightness_step_pct_positive }}"
                       entity_id: !input light
+                    - delay: !input wait_step_length
 
     # when trigger came (button has been released within timeout)
     default:
