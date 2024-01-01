@@ -21,40 +21,40 @@ blueprint:
     hold_threshold:
       name: Hold threshold
       description: Time to consider button is being held, instead of just pushed.
-      default: "0.8"
+      default: 0.8
       selector:
         number:
-          min: "0.05"
-          max: "10"
-          step: "0.05"
+          min: 0.05
+          max: 10
+          step: 0.05
           unit_of_measurement: s
     brightness_threshold:
       name: Brightness threshold
       description: If the light brightness is above this value,
         the light is going to dim down when holding the button.
-      default: "130"
+      default: 130
       selector:
         number:
-          min: "0"
-          max: "255"
+          min: 0
+          max: 255
     brightness_step_pct:
       name: Brightness step
       description: Percentage brightness increase/decrease in each transition step.
-      default: "20"
+      default: 20
       selector:
         number:
-          min: "1"
-          max: "100"
+          min: 1
+          max: 100
           unit_of_measurement: "%"
     transition_step_length:
       name: Transition step lenght
       description: Length of each transition step.
-      default: "0.1"
+      default: 0.1
       selector:
         number:
-          min: "0"
-          max: "5"
-          step: "0.01"
+          min: 0
+          max: 5
+          step: 0.01
           unit_of_measurement: s
 
 mode: single
