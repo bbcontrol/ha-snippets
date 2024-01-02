@@ -83,6 +83,7 @@ action:
       brightness_step_pct_positive: !input brightness_step_pct
   - variables:
       brightness_step_pct_negative: "{{ brightness_step_pct_positive|int * -1 }}"
+      light: !input light
   - wait_for_trigger:
       - platform: state
         entity_id: !input button
@@ -108,32 +109,64 @@ action:
                   # dim down
                   - repeat:
                       while:
-                        - condition: state
-                          entity_id: !input button
-                          state: "on"
+                        - condition: and
+                          conditions:
+                            - condition: state
+                              entity_id: !input button
+                              state: "on"
+                            - condition: template
+                              value_template: "{{ (state_attr(light, 'brightness') or 0) > 0 }}"
                       sequence:
-                        - service: light.turn_on
-                          data:
-                            transition: !input transition_step_length
-                            brightness_step_pct: "{{ brightness_step_pct_negative }}"
-                          entity_id: !input light
+                        - if:
+                            - alias: If next step would not turn off the light
+                              condition: template
+                              value_template: "{{ (state_attr(light, 'brightness') or 0) > brightness_step_pct_positive }}"
+                          then:
+                            - service: light.turn_on
+                              entity_id: !input light
+                              data:
+                                transition: !input transition_step_length
+                                brightness_step_pct: "{{ brightness_step_pct_negative }}"
+                          else:
+                            - service: light.turn_off
+                              entity_id: !input light
+                              data:
+                                transition: !input transition_step_length
+                            - stop: Dimmed to zero
                         - delay: !input delay_step_length
             default:
               # otherwise, dim up
               - repeat:
                   while:
-                    - condition: state
-                      entity_id: !input button
-                      state: "on"
+                    - condition: and
+                      conditions:
+                        - condition: state
+                          entity_id: !input button
+                          state: "on"
+                        - condition: template
+                          value_template: "{{ (state_attr(light, 'brightness') or 0) < 255 }}"
                   sequence:
-                    - service: light.turn_on
-                      data:
-                        transition: !input transition_step_length
-                        brightness_step_pct: "{{ brightness_step_pct_positive }}"
-                      entity_id: !input light
+                    - if:
+                        - alias: If next step would not turn the light fully on
+                          condition: template
+                          value_template: "{{ (state_attr(light, 'brightness') or 0) + brightness_step_pct_positive < 255 }}"
+                      then:
+                        - service: light.turn_on
+                          entity_id: !input light
+                          data:
+                            transition: !input transition_step_length
+                            brightness_step_pct: "{{ brightness_step_pct_positive }}"
+                      else:
+                        - service: light.turn_on
+                          entity_id: !input light
+                          data:
+                            transition: !input transition_step_length
+                        - stop: Dimmed to max
                     - delay: !input delay_step_length
 
     # when trigger came (button has been released within timeout)
     default:
       - service: light.toggle
         entity_id: !input light
+        data:
+          transition: !input transition_step_length
