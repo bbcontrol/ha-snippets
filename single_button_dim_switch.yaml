@@ -1,6 +1,7 @@
 blueprint:
   name: Single button dim switch
-  description: Switch a light on/off by pressing a button.
+  description: >-
+    Switch a light on/off by pressing a button.
     Dim it up/down (depending on it's current state) by holding the same button.
   domain: automation
   input:
@@ -9,7 +10,6 @@ blueprint:
       description:
         Entity representing a physical push button (which restores its position
         when released). It must emit a square signal on press.
-        This automation is triggered by its falling edge.
       selector:
         entity:
           domain: binary_sensor
@@ -21,40 +21,54 @@ blueprint:
     hold_threshold:
       name: Hold threshold
       description: Time to consider button is being held, instead of just pushed.
-      default: "0.8"
+      default: 0.8
       selector:
         number:
-          min: "0.05"
-          max: "10"
-          step: "0.05"
+          min: 0.05
+          max: 10
+          step: 0.05
           unit_of_measurement: s
     brightness_threshold:
       name: Brightness threshold
       description: If the light brightness is above this value,
         the light is going to dim down when holding the button.
-      default: "130"
+      default: 130
       selector:
         number:
-          min: "0"
-          max: "255"
+          min: 0
+          max: 255
     brightness_step_pct:
       name: Brightness step
-      description: Percentage brightness increase/decrease in each transition step.
-      default: "20"
+      description: Percentage brightness increase/decrease in each step.
+      default: 20
       selector:
         number:
-          min: "1"
-          max: "100"
+          min: 1
+          max: 100
           unit_of_measurement: "%"
     transition_step_length:
-      name: Transition step lenght
-      description: Length of each transition step.
-      default: "0.1"
+      name: Transition lenght
+      description: >-
+        Lenght of brightness transition in each step.
+        WARNING: may not be supported by all lights.
+      default: 0
       selector:
         number:
-          min: "0"
-          max: "5"
-          step: "0.01"
+          min: 0
+          max: 5
+          step: 0.01
+          unit_of_measurement: s
+    delay_step_length:
+      name: Delay length
+      description: >-
+        Length of pause after each step.
+        MUST be larger than Transition length.
+      default: 0.2
+      selector:
+        number:
+          min: 0.1
+          max: 5
+          step: 0.01
           unit_of_measurement: s
 
 mode: single
@@ -69,6 +83,7 @@ action:
       brightness_step_pct_positive: !input brightness_step_pct
   - variables:
       brightness_step_pct_negative: "{{ brightness_step_pct_positive|int * -1 }}"
+      light: !input light
   - wait_for_trigger:
       - platform: state
         entity_id: !input button
@@ -94,30 +109,64 @@ action:
                   # dim down
                   - repeat:
                       while:
-                        - condition: state
-                          entity_id: !input button
-                          state: "on"
+                        - condition: and
+                          conditions:
+                            - condition: state
+                              entity_id: !input button
+                              state: "on"
+                            - condition: template
+                              value_template: "{{ (state_attr(light, 'brightness') or 0) > 0 }}"
                       sequence:
-                        - service: light.turn_on
-                          data:
-                            transition: !input transition_step_length
-                            brightness_step_pct: "{{ brightness_step_pct_negative }}"
-                          entity_id: !input light
+                        - if:
+                            - alias: If next step would not turn off the light
+                              condition: template
+                              value_template: "{{ (state_attr(light, 'brightness') or 0) > brightness_step_pct_positive }}"
+                          then:
+                            - service: light.turn_on
+                              entity_id: !input light
+                              data:
+                                transition: !input transition_step_length
+                                brightness_step_pct: "{{ brightness_step_pct_negative }}"
+                          else:
+                            - service: light.turn_off
+                              entity_id: !input light
+                              data:
+                                transition: !input transition_step_length
+                            - stop: Dimmed to zero
+                        - delay: !input delay_step_length
             default:
               # otherwise, dim up
               - repeat:
                   while:
-                    - condition: state
-                      entity_id: !input button
-                      state: "on"
+                    - condition: and
+                      conditions:
+                        - condition: state
+                          entity_id: !input button
+                          state: "on"
+                        - condition: template
+                          value_template: "{{ (state_attr(light, 'brightness') or 0) < 255 }}"
                   sequence:
-                    - service: light.turn_on
-                      data:
-                        transition: !input transition_step_length
-                        brightness_step_pct: "{{ brightness_step_pct_positive }}"
-                      entity_id: !input light
+                    - if:
+                        - alias: If next step would not turn the light fully on
+                          condition: template
+                          value_template: "{{ (state_attr(light, 'brightness') or 0) + brightness_step_pct_positive < 255 }}"
+                      then:
+                        - service: light.turn_on
+                          entity_id: !input light
+                          data:
+                            transition: !input transition_step_length
+                            brightness_step_pct: "{{ brightness_step_pct_positive }}"
+                      else:
+                        - service: light.turn_on
+                          entity_id: !input light
+                          data:
+                            transition: !input transition_step_length
+                        - stop: Dimmed to max
+                    - delay: !input delay_step_length
 
     # when trigger came (button has been released within timeout)
     default:
       - service: light.toggle
         entity_id: !input light
+        data:
+          transition: !input transition_step_length
