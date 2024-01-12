@@ -1,6 +1,6 @@
 blueprint:
-  name: Danfoss TRV manual sync
-  description: Synchronize the temperature between multiple Danfoss / Popp TRVs when user changes temperature on one of them manually.
+  name: Danfoss TRV manual sync (Z2M)
+  description: Synchronize the temperature between multiple Danfoss / Popp TRVs when user changes temperature on one of them manually. Relies on entites provided by Zigbee2MQTT.
   domain: automation
   input:
     trvs:
