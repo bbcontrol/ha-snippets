@@ -1,0 +1,113 @@
+alias: Přepínání režimů vytápění
+mode: restart
+description: >-
+  Předpokládá existenci `input_select.rezim_vytapeni` s hodnotami "V provozu", "Dovolená", "Boost" (case-sensitive!).
+trigger:
+  - platform: state
+    entity_id:
+      - input_select.rezim_vytapeni
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 2
+condition: []
+action:
+  - alias: 'Uložení stavu vytápění, pokud opouštíme stav "V provozu"'
+    if:
+      - condition: template
+        value_template: '{{ trigger.from_state.state == "V provozu" }}'
+    then:
+      - service: scene.create
+        data:
+          scene_id: stav_vytapeni_v_provozu
+          snapshot_entities:
+            # TODO vypsat všechny TRV
+            - climate.obyvak_trv
+            - climate.loznice_trv
+            # TODO oběhová čerpadla
+            - switch.cirkulace_topeni
+            # TODO zdroj tepla
+            - water_heater.tepelne_cerpadlo
+      - service: scene.create
+        data:
+          scene_id: stav_planovace_vytapeni_v_provozu
+          snapshot_entities:
+            # TODO vypsat všechny schedulery
+            - switch.schedule_obyvak
+            - switch.schedule_loznice
+
+  - alias: 'Obnovit stav vytápění, pokud se vracíme do stavu "V provozu"'
+    if:
+      - condition: template
+        value_template: '{{ trigger.to_state.state == "V provozu" and trigger.from_state.state in ("Dovolená", "Boost") }}'
+    then:
+      - service: scene.turn_on
+        data: {}
+        target:
+          entity_id: scene.stav_vytapeni_v_provozu
+      - delay: 1
+      # plánovač je aplikován jako druhý, aby přepsal předchozí nastavení
+      - service: scene.turn_on
+        data: {}
+        target:
+          entity_id: scene.stav_planovace_vytapeni_v_provozu
+
+  - choose:
+      - alias: 'Utlumit vytápění, pokud přicházíme do stavu "Dovolená"'
+        conditions:
+          - condition: state
+            entity_id: input_select.rezim_vytapeni
+            state: Dovolená
+        sequence:
+          - service: switch.turn_off
+            data: {}
+            target:
+              entity_id:
+                # TODO vypsat všechny schedulery
+                - switch.schedule_obyvak
+                - switch.schedule_loznice
+                # TODO oběhová čerpadla
+                - switch.cirkulace_topeni
+          - service: water_heater.set_operation_mode
+            data:
+              operation_mode: "off"
+            target:
+              entity_id:
+                # TODO zdroj tepla
+                - water_heater.tepelne_cerpadlo
+          - service: climate.set_temperature
+            data:
+              temperature: 15
+            target:
+              entity_id:
+                # TODO vypsat všechny TRV
+                - climate.obyvak_trv
+                - climate.loznice_trv
+
+      - alias: 'Přidat vytápění, pokud přicházíme do stavu "Boost"'
+        conditions:
+          - condition: state
+            entity_id: input_select.rezim_vytapeni
+            state: Boost
+        sequence:
+          - service: switch.turn_off
+            data: {}
+            target:
+              entity_id:
+                # TODO vypsat všechny schedulery
+                - switch.schedule_obyvak
+                - switch.schedule_loznice
+          - service: climate.set_temperature
+            data:
+              temperature: 26
+            target:
+              entity_id:
+                # TODO vypsat všechny TRV
+                - climate.obyvak_trv
+                - climate.loznice_trv
+          - delay: 1800
+          - service: input_select.select_option
+            target:
+              entity_id: input_select.rezim_vytapeni
+            data:
+              option: V provozu
