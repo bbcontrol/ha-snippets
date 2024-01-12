@@ -1,0 +1,31 @@
+blueprint:
+  name: Danfoss TRV sync
+  description: Synchronize the temperature between multiple Danfoss / Popp TRVs when user changes temperature on one of them.
+  domain: automation
+  input:
+    trvs:
+      name: TRVs
+      description: The TRVs to synchronize temperature between. At least two entities are required.
+      selector:
+        entity:
+          domain: climate
+          multiple: true
+trigger:
+  - platform: state
+    entity_id: !input trvs
+    attribute: temperature
+    for: 2
+action:
+  - repeat:
+      for_each: !input trvs
+      sequence:
+        - if:
+            - condition: template
+              value_template: "{{ trigger.entity_id != repeat.item }}"
+          then:
+            - service: climate.set_temperature
+              data:
+                temperature: "{{ state_attr(trigger.entity_id, 'temperature') }}"
+              target:
+                entity_id: "{{ repeat.item }}"
+mode: single
