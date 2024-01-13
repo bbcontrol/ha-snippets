@@ -1,7 +1,7 @@
 alias: Přepínání režimů vytápění
 mode: restart
 description: >-
-  Předpokládá existenci `input_select.rezim_vytapeni` s hodnotami "V provozu", "Dovolená", "Boost" (case-sensitive!).
+  Předpokládá existenci `input_select.rezim_vytapeni` s hodnotami "V provozu", "Útlum", "Boost" (case-sensitive!).
 trigger:
   - platform: state
     entity_id:
@@ -39,7 +39,7 @@ action:
   - alias: 'Obnovit stav vytápění, pokud se vracíme do stavu "V provozu"'
     if:
       - condition: template
-        value_template: '{{ trigger.to_state.state == "V provozu" and trigger.from_state.state in ("Dovolená", "Boost") }}'
+        value_template: '{{ trigger.to_state.state == "V provozu" and trigger.from_state.state in ("Útlum", "Boost") }}'
     then:
       - service: scene.turn_on
         data: {}
@@ -53,11 +53,11 @@ action:
           entity_id: scene.stav_planovace_vytapeni_v_provozu
 
   - choose:
-      - alias: 'Utlumit vytápění, pokud přicházíme do stavu "Dovolená"'
+      - alias: 'Utlumit vytápění, pokud přicházíme do stavu "Útlum"'
         conditions:
           - condition: state
             entity_id: input_select.rezim_vytapeni
-            state: Dovolená
+            state: Útlum
         sequence:
           - service: switch.turn_off
             data: {}
