@@ -1,0 +1,94 @@
+alias: Cover set position and tilt
+sequence:
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: >-
+              {{ ((state_attr(cover, 'current_position') - lift) | abs) >
+              (tolerance | default(3)) }}
+        sequence:
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ lift == 0 }}"
+                sequence:
+                  - service: cover.close_cover
+                    data_template:
+                      entity_id: "{{ cover }}"
+              - conditions:
+                  - condition: template
+                    value_template: "{{ lift == 100 }}"
+                sequence:
+                  - service: cover.open_cover
+                    data_template:
+                      entity_id: "{{ cover }}"
+            default:
+              - service: cover.set_cover_position
+                data_template:
+                  entity_id: "{{ cover }}"
+                  position: "{{ lift }}"
+          - wait_template: "{{ state_attr(cover, 'current_position') == lift }}"
+            timeout: 120
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: >-
+              {{ tilt is defined and ((state_attr(cover,
+              'current_tilt_position') - tilt) | abs) > (tolerance | default(3))
+              }}
+        sequence:
+          - if:
+              - condition: template
+                value_template: >-
+                  {{ state_attr(cover, 'current_tilt_position') == 0 or tilt in
+                  (0, 100) }}
+            then:
+              - service: cover.set_cover_tilt_position
+                data_template:
+                  entity_id: "{{ cover }}"
+                  tilt_position: "{{ tilt }}"
+            else:
+              - service: cover.set_cover_tilt_position
+                data_template:
+                  entity_id: "{{ cover }}"
+                  tilt_position: 0
+              - wait_template: "{{ state_attr(cover, 'current_tilt_position') == 0 }}"
+                timeout: 5
+                continue_on_timeout: true
+              - service: cover.set_cover_tilt_position
+                data_template:
+                  entity_id: "{{ cover }}"
+                  tilt_position: "{{ tilt }}"
+icon: mdi:window-shutter-settings
+mode: restart
+fields:
+  cover:
+    selector:
+      entity:
+        filter:
+          - domain: cover
+    name: Cover
+    required: true
+  lift:
+    selector:
+      number:
+        min: 0
+        max: 100
+        step: 1
+    name: lift
+    required: true
+  tilt:
+    selector:
+      number:
+        min: 0
+        max: 100
+    name: tilt
+    required: false
+  tolerance:
+    selector:
+      number:
+        min: 0
+        max: 10
+    name: tolerance
+    default: 3
+    required: true
