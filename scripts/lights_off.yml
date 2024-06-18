@@ -1,0 +1,25 @@
+alias: Lights off
+sequence:
+  - repeat:
+      sequence:
+        - service: light.turn_off
+          metadata: {}
+          data: {}
+          target:
+            entity_id: "{{ repeat.item }}"
+        - if:
+            - condition: template
+              value_template: "{{ repeat.index % 5 == 0 }}"
+          then:
+            - delay:
+                hours: 0
+                minutes: 0
+                seconds: 0
+                milliseconds: 200
+      for_each: >-
+        [ {% for light in states.light | map(attribute='entity_id') |
+        select('is_state', 'on') | list -%} {% if state_attr(light, 'entity_id')
+        == None and not is_state_attr(light, 'type', 'browser_mod') -%} '{{
+        light }}', {% endif -%} {% endfor %} ]
+description: ""
+icon: mdi:lightbulb-off-outline
