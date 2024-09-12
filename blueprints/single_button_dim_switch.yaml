@@ -122,13 +122,13 @@ action:
                               condition: template
                               value_template: "{{ (state_attr(light, 'brightness') or 0) > brightness_step_pct_positive }}"
                           then:
-                            - service: light.turn_on
+                            - action: light.turn_on
                               entity_id: !input light
                               data:
                                 transition: !input transition_step_length
                                 brightness_step_pct: "{{ brightness_step_pct_negative }}"
                           else:
-                            - service: light.turn_off
+                            - action: light.turn_off
                               entity_id: !input light
                               data:
                                 transition: !input transition_step_length
@@ -151,13 +151,13 @@ action:
                           condition: template
                           value_template: "{{ (state_attr(light, 'brightness') or 0) + brightness_step_pct_positive < 255 }}"
                       then:
-                        - service: light.turn_on
+                        - action: light.turn_on
                           entity_id: !input light
                           data:
                             transition: !input transition_step_length
                             brightness_step_pct: "{{ brightness_step_pct_positive }}"
                       else:
-                        - service: light.turn_on
+                        - action: light.turn_on
                           entity_id: !input light
                           data:
                             transition: !input transition_step_length
@@ -166,7 +166,7 @@ action:
 
     # when trigger came (button has been released within timeout)
     default:
-      - service: light.toggle
+      - action: light.toggle
         entity_id: !input light
         data:
           transition: !input transition_step_length

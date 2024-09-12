@@ -12,18 +12,18 @@ sequence:
                   - condition: template
                     value_template: "{{ lift == 0 }}"
                 sequence:
-                  - service: cover.close_cover
+                  - action: cover.close_cover
                     data_template:
                       entity_id: "{{ cover }}"
               - conditions:
                   - condition: template
                     value_template: "{{ lift == 100 }}"
                 sequence:
-                  - service: cover.open_cover
+                  - action: cover.open_cover
                     data_template:
                       entity_id: "{{ cover }}"
             default:
-              - service: cover.set_cover_position
+              - action: cover.set_cover_position
                 data_template:
                   entity_id: "{{ cover }}"
                   position: "{{ lift }}"
@@ -43,19 +43,19 @@ sequence:
                   {{ state_attr(cover, 'current_tilt_position') == 0 or tilt in
                   (0, 100) }}
             then:
-              - service: cover.set_cover_tilt_position
+              - action: cover.set_cover_tilt_position
                 data_template:
                   entity_id: "{{ cover }}"
                   tilt_position: "{{ tilt }}"
             else:
-              - service: cover.set_cover_tilt_position
+              - action: cover.set_cover_tilt_position
                 data_template:
                   entity_id: "{{ cover }}"
                   tilt_position: 0
               - wait_template: "{{ state_attr(cover, 'current_tilt_position') == 0 }}"
                 timeout: 5
                 continue_on_timeout: true
-              - service: cover.set_cover_tilt_position
+              - action: cover.set_cover_tilt_position
                 data_template:
                   entity_id: "{{ cover }}"
                   tilt_position: "{{ tilt }}"

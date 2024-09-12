@@ -48,7 +48,7 @@ sequence:
     # Write attribute 0x10F2:0x0000 (“WindowCoveringType”) accordingly.
 
   - alias: 'Step 1: set window covering type to "tilt & lift"'
-    service: zha.set_zigbee_cluster_attribute
+    action: zha.set_zigbee_cluster_attribute
     data:
       cluster_type: in
       ieee: "{{ ieee }}"
@@ -73,7 +73,7 @@ sequence:
     repeat:
       count: 1
       sequence:
-        - service: zha.set_zigbee_cluster_attribute
+        - action: zha.set_zigbee_cluster_attribute
           data:
             cluster_type: in
             ieee: "{{ ieee }}"
@@ -82,7 +82,7 @@ sequence:
             manufacturer: 0x10F2
             attribute: 0x0010
             value: 0x0000 # = 0cm
-        - service: zha.set_zigbee_cluster_attribute
+        - action: zha.set_zigbee_cluster_attribute
           data:
             cluster_type: in
             ieee: "{{ ieee }}"
@@ -91,7 +91,7 @@ sequence:
             manufacturer: 0x10F2
             attribute: 0x0011
             value: 0x00F0 # = 240cm
-        - service: zha.set_zigbee_cluster_attribute
+        - action: zha.set_zigbee_cluster_attribute
           data:
             cluster_type: in
             ieee: "{{ ieee }}"
@@ -100,7 +100,7 @@ sequence:
             manufacturer: 0x10F2
             attribute: 0x0012
             value: 0x0000 # = 0°
-        - service: zha.set_zigbee_cluster_attribute
+        - action: zha.set_zigbee_cluster_attribute
           data:
             cluster_type: in
             ieee: "{{ ieee }}"
@@ -109,7 +109,7 @@ sequence:
             manufacturer: 0x10F2
             attribute: 0x0013
             value: 0x0384 # = 90.0°
-        - service: zha_toolkit.attr_write
+        - action: zha_toolkit.attr_write
           data:
             ieee: "{{ ieee }}"
             endpoint: 1
@@ -117,7 +117,7 @@ sequence:
             manf: 0x10F2
             attribute: 0x1001
             attr_val: 0xFFFF # = invalid
-        - service: zha_toolkit.attr_write
+        - action: zha_toolkit.attr_write
           data:
             ieee: "{{ ieee }}"
             endpoint: 1
@@ -125,7 +125,7 @@ sequence:
             manf: 0x10F2
             attribute: 0x1002
             attr_val: 0xFFFF # = invalid
-        - service: zha_toolkit.attr_write
+        - action: zha_toolkit.attr_write
           data:
             ieee: "{{ ieee }}"
             endpoint: 1
@@ -133,7 +133,7 @@ sequence:
             manf: 0x10F2
             attribute: 0x1003
             attr_val: 0xFFFF # = invalid
-        - service: zha_toolkit.attr_write
+        - action: zha_toolkit.attr_write
           data:
             ieee: "{{ ieee }}"
             endpoint: 1
@@ -149,7 +149,7 @@ sequence:
     # Write attribute 0x0017 (“Mode”) as 0x02.
 
   - alias: "Step 3: enter calibration mode"
-    service: zha.set_zigbee_cluster_attribute
+    action: zha.set_zigbee_cluster_attribute
     data:
       cluster_type: in
       ieee: "{{ ieee }}"
@@ -166,7 +166,7 @@ sequence:
     repeat:
       count: 1
       sequence:
-        - service: zha.issue_zigbee_cluster_command
+        - action: zha.issue_zigbee_cluster_command
           data:
             cluster_type: in
             ieee: "{{ ieee }}"
@@ -176,7 +176,7 @@ sequence:
             command: 0x01 # = move down
             params: {}
         - delay: 2
-        - service: zha.issue_zigbee_cluster_command
+        - action: zha.issue_zigbee_cluster_command
           data:
             cluster_type: in
             ieee: "{{ ieee }}"
@@ -193,7 +193,7 @@ sequence:
     repeat:
       count: 1
       sequence:
-        - service: zha.issue_zigbee_cluster_command
+        - action: zha.issue_zigbee_cluster_command
           data:
             cluster_type: in
             ieee: "{{ ieee }}"
@@ -211,7 +211,7 @@ sequence:
     repeat:
       count: 1
       sequence:
-        - service: zha.issue_zigbee_cluster_command
+        - action: zha.issue_zigbee_cluster_command
           data:
             cluster_type: in
             ieee: "{{ ieee }}"
@@ -230,7 +230,7 @@ sequence:
     repeat:
       count: 1
       sequence:
-        - service: zha.issue_zigbee_cluster_command
+        - action: zha.issue_zigbee_cluster_command
           data:
             cluster_type: in
             ieee: "{{ ieee }}"
@@ -254,7 +254,7 @@ sequence:
     repeat:
       count: 1
       sequence:
-        - service: zha_toolkit.attr_write
+        - action: zha_toolkit.attr_write
           data:
             ieee: "{{ ieee }}"
             endpoint: 1
@@ -262,7 +262,7 @@ sequence:
             manf: 0x10F2
             attribute: 0x1001
             attr_val: "{{ tilt_time }}" # the time it takes for a lift-to-tilt transition (down) - measured in number of full AC waves - 20ms = 1 step
-        - service: zha_toolkit.attr_write
+        - action: zha_toolkit.attr_write
           data:
             ieee: "{{ ieee }}"
             endpoint: 1
@@ -277,7 +277,7 @@ sequence:
     repeat:
       count: 1
       sequence:
-        - service: zha.set_zigbee_cluster_attribute
+        - action: zha.set_zigbee_cluster_attribute
           data:
             cluster_type: in
             ieee: "{{ ieee }}"
@@ -296,7 +296,7 @@ sequence:
     repeat:
       count: 1
       sequence:
-        - service: zha.issue_zigbee_cluster_command
+        - action: zha.issue_zigbee_cluster_command
           data:
             cluster_type: in
             ieee: "{{ ieee }}"
@@ -306,7 +306,7 @@ sequence:
             command: 0x01 # = move down
             params: {}
         - delay: 1
-        - service: zha.issue_zigbee_cluster_command
+        - action: zha.issue_zigbee_cluster_command
           data:
             cluster_type: in
             ieee: "{{ ieee }}"

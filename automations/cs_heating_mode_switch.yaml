@@ -17,7 +17,7 @@ action:
       - condition: template
         value_template: '{{ trigger.from_state.state == "V provozu" }}'
     then:
-      - service: scene.create
+      - action: scene.create
         data:
           scene_id: stav_vytapeni_v_provozu
           snapshot_entities:
@@ -28,7 +28,7 @@ action:
             - switch.cirkulace_topeni
             # TODO zdroj tepla
             - water_heater.tepelne_cerpadlo
-      - service: scene.create
+      - action: scene.create
         data:
           scene_id: stav_planovace_vytapeni_v_provozu
           snapshot_entities:
@@ -41,13 +41,13 @@ action:
       - condition: template
         value_template: '{{ trigger.to_state.state == "V provozu" and trigger.from_state.state in ("Útlum", "Boost") }}'
     then:
-      - service: scene.turn_on
+      - action: scene.turn_on
         data: {}
         target:
           entity_id: scene.stav_vytapeni_v_provozu
       - delay: 1
       # plánovač je aplikován jako druhý, aby přepsal předchozí nastavení
-      - service: scene.turn_on
+      - action: scene.turn_on
         data: {}
         target:
           entity_id: scene.stav_planovace_vytapeni_v_provozu
@@ -59,7 +59,7 @@ action:
             entity_id: input_select.rezim_vytapeni
             state: Útlum
         sequence:
-          - service: switch.turn_off
+          - action: switch.turn_off
             data: {}
             target:
               entity_id:
@@ -68,14 +68,14 @@ action:
                 - switch.schedule_loznice
                 # TODO oběhová čerpadla
                 - switch.cirkulace_topeni
-          - service: water_heater.set_operation_mode
+          - action: water_heater.set_operation_mode
             data:
               operation_mode: "off"
             target:
               entity_id:
                 # TODO zdroj tepla
                 - water_heater.tepelne_cerpadlo
-          - service: climate.set_temperature
+          - action: climate.set_temperature
             data:
               temperature: 15
             target:
@@ -90,14 +90,14 @@ action:
             entity_id: input_select.rezim_vytapeni
             state: Boost
         sequence:
-          - service: switch.turn_off
+          - action: switch.turn_off
             data: {}
             target:
               entity_id:
                 # TODO vypsat všechny schedulery
                 - switch.schedule_obyvak
                 - switch.schedule_loznice
-          - service: climate.set_temperature
+          - action: climate.set_temperature
             data:
               temperature: 26
             target:
@@ -106,7 +106,7 @@ action:
                 - climate.obyvak_trv
                 - climate.loznice_trv
           - delay: 1800
-          - service: input_select.select_option
+          - action: input_select.select_option
             target:
               entity_id: input_select.rezim_vytapeni
             data:

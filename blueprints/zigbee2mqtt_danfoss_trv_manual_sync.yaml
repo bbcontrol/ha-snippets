@@ -25,7 +25,7 @@ action:
             - condition: template
               value_template: "{{ trigger.entity_id != repeat.item }}"
           then:
-            - service: climate.set_temperature
+            - action: climate.set_temperature
               data:
                 temperature: "{{ state_attr(trigger.entity_id, 'temperature') }}"
               target:

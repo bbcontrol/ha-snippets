@@ -64,7 +64,7 @@ action:
             entity_id: !input light
             state: "off"
         sequence:
-          - service: light.turn_on
+          - action: light.turn_on
             entity_id: !input light
             data:
               brightness: !input brightness_lo
@@ -83,14 +83,14 @@ action:
                 from: "on"
             timeout: !input hold_threshold
             continue_on_timeout: false
-          - service: light.turn_off
+          - action: light.turn_off
             entity_id: !input light
 
       - conditions:
           - condition: template
             value_template: "{{ trigger.id == 'hold' }}"
         sequence:
-          - service: light.turn_on
+          - action: light.turn_on
             entity_id: !input light
             data:
               brightness: !input brightness_hi

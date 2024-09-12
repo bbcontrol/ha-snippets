@@ -15,7 +15,7 @@ condition:
       {{ state_attr('switch.adaptive_lighting_flux', 'color_temp_mired') is not
       none }}
 action:
-  - service: mqtt.publish
+  - action: mqtt.publish
     data:
       topic: zigbee2mqtt/Všechna světla/set
       payload_template: >
