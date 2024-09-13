@@ -38,7 +38,16 @@ fields:
         min: 20
         max: 180
         unit_of_measurement: seconds
-
+  window_covering_type:
+    required: true
+    name: Window covering type
+    default: 8
+    description: 0 = Rollershade; 1 = Rollershade (2 motor); 2 = Rollershade (exterior); 3 = Rollershade (exterior, 2 motor); 4 = Drapery; 5 = Awning; 6 = Shutter; 7 = Tilt Blind (tilt only); 8 = Tilt Blind (lift and tilt); 9 = Projector Screen
+    selector:
+      number:
+        min: 0
+        max: 9
+        step: 1
 sequence:
   - alias: Get IEEE address of the device
     variables:
@@ -56,7 +65,7 @@ sequence:
       cluster_id: 0x0102
       manufacturer: 0x10F2
       attribute: 0x0000
-      value: 8 # tilt and lift
+      value: "{{ window_covering_type }}"
 
     # Step 2
     # Prepare calibration by setting these values:
@@ -252,7 +261,7 @@ sequence:
 
   - alias: "Step 8: set tilt times"
     repeat:
-      count: 1
+      count: "{{ 1 if window_covering_type == 8 else 0 }}"
       sequence:
         - action: zha_toolkit.attr_write
           data:
