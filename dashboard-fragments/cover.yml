@@ -1,74 +1,75 @@
-- type: vertical-stack
-  cards:
-    - type: tile
-      entity: cover.obyvak_dvere
-      state_content:
-        - state
-        - current_tilt_position
-      tap_action:
-        action: none
-      icon_tap_action:
-        action: none
-    - type: horizontal-stack
-      cards:
-        - show_name: true
-          show_icon: true
-          type: button
-          tap_action:
-            action: call-service
-            service: script.cover_set_position_and_tilt
-            data:
-              cover: cover.obyvak_dvere
-              lift: 0
-              tilt: 0
-          name: 0%
-          icon: mdi:brightness-1
-          icon_height: 1.2em
-        - show_name: true
-          show_icon: true
-          type: button
-          tap_action:
-            action: call-service
-            service: script.cover_set_position_and_tilt
-            data:
-              cover: cover.obyvak_dvere
-              lift: 0
-              tilt: 40
-          name: 40%
-          icon: mdi:brightness-2
-          icon_height: 1.2em
-        - type: button
-          tap_action:
-            action: call-service
-            service: script.cover_set_position_and_tilt
-            data:
-              cover: cover.obyvak_dvere
-              lift: 0
-              tilt: 60
-          name: 60%
-          show_name: true
-          icon: mdi:brightness-3
-          icon_height: 1.2em
-        - type: button
-          tap_action:
-            action: call-service
-            service: script.cover_set_position_and_tilt
-            data:
-              cover: cover.obyvak_dvere
-              lift: 0
-              tilt: 100
-          name: 100%
-          show_name: true
-          icon: mdi:circle-outline
-          icon_height: 1.2em
-        - type: button
-          tap_action:
-            action: call-service
-            service: script.cover_set_position_and_tilt
-            data:
-              cover: cover.obyvak_dvere
-              lift: 100
-          name: Open
-          show_name: true
-          icon: mdi:arrow-up
-          icon_height: 1.2em
+type: tile
+entity: cover.living_room_door
+hide_state: false
+show_entity_picture: false
+vertical: false
+state_content:
+  - state
+  - current_position
+features:
+  - type: custom:service-call
+    entries:
+      - type: button
+        tap_action:
+          action: call-service
+          service: script.cover_set_position_and_tilt
+          data:
+            cover: cover.living_room_door
+            lift: 0
+            tilt: 0
+        label: 0%
+        icon: mdi:brightness-1
+        entity_id: cover.living_room_door
+      - type: button
+        tap_action:
+          action: call-service
+          service: script.cover_set_position_and_tilt
+          data:
+            cover: cover.living_room_door
+            lift: 0
+            tilt: 40
+        label: 40%
+        icon: mdi:brightness-2
+        entity_id: cover.living_room_door
+      - type: button
+        tap_action:
+          action: call-service
+          service: script.cover_set_position_and_tilt
+          data:
+            cover: cover.living_room_door
+            lift: 0
+            tilt: 60
+        label: 60%
+        icon: mdi:brightness-3
+        entity_id: cover.living_room_door
+      - type: button
+        tap_action:
+          action: call-service
+          service: script.cover_set_position_and_tilt
+          data:
+            cover: cover.living_room_door
+            lift: 0
+            tilt: 100
+        label: 100%
+        icon: mdi:circle-outline
+        entity_id: cover.living_room_door
+      - type: button
+        tap_action:
+          action: call-service
+          service: script.cover_set_position_and_tilt
+          data:
+            cover: cover.living_room_door
+            lift: 100
+        label: Open
+        icon: mdi:arrow-up
+        entity_id: cover.living_room_door
+      - type: button
+        tap_action:
+          action: perform-action
+          perform_action: cover.stop_cover
+          target:
+            entity_id: cover.living_room_door
+          data: {}
+        label: Stop
+        icon: mdi:stop
+        entity_id: cover.living_room_door
