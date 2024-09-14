@@ -1,0 +1,51 @@
+blueprint:
+  name: Cover auto open
+  description: Automatically open cover when door is opened and cover is closed
+  domain: automation
+  input:
+    cover:
+      name: Cover
+      selector:
+        entity:
+          domain: cover
+    door_sensor:
+      name: Door sensor
+      selector:
+        entity:
+          domain: binary_sensor
+    limit_position:
+      name: Limit position
+      description: The position at which the cover should be opened
+      default: 90
+      selector:
+        number:
+          min: 0
+          max: 100
+          mode: slider
+          step: 1
+    enable_helper:
+      name: Enable helper
+      description: Helper `input_boolean` to enable/disable the automation
+      default: input_boolean.cover_auto_open
+      selector:
+        entity:
+          domain: input_boolean
+mode: single
+trigger:
+  - platform: state
+    entity_id: !input door_sensor
+    to: "on"
+condition:
+  - condition: state
+    entity_id: !input enable_helper
+    state: "on"
+  - condition: numeric_state
+    entity_id: !input cover
+    below: !input limit_position
+    attribute: current_position
+action:
+  - action: cover.open_cover
+    metadata: {}
+    data: {}
+    target:
+      entity_id: !input cover
