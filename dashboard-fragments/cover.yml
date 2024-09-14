@@ -6,6 +6,9 @@ vertical: false
 state_content:
   - state
   - current_position
+layout_options:
+  grid_columns: 4
+  grid_rows: 2
 features:
   - type: custom:service-call
     entries:
