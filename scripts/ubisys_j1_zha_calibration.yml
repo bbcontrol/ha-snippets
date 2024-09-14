@@ -4,7 +4,7 @@ description: >
   ⚠️ The procedure currently depends on ZHA Toolkit. https://github.com/mdeweerd/zha-toolkit. Please install it first. ⚠️
   See: https://www.ubisys.de/wp-content/uploads/ubisys-j1-technical-reference.pdf.
 icon: mdi:window-shutter-cog
-mode: single
+mode: parallel
 fields:
   device:
     required: true
@@ -14,7 +14,6 @@ fields:
       device:
         integration: zha
         manufacturer: ubisys
-        model: J1
   # ieee:
   #   name: IEEE address
   #   description: Full IEEE address of Ubisys J1 device to calibrate.
@@ -41,13 +40,30 @@ fields:
   window_covering_type:
     required: true
     name: Window covering type
-    default: 8
-    description: 0 = Rollershade; 1 = Rollershade (2 motor); 2 = Rollershade (exterior); 3 = Rollershade (exterior, 2 motor); 4 = Drapery; 5 = Awning; 6 = Shutter; 7 = Tilt Blind (tilt only); 8 = Tilt Blind (lift and tilt); 9 = Projector Screen
+    default: "8"
     selector:
-      number:
-        min: 0
-        max: 9
-        step: 1
+      select:
+        options:
+          - label: Rollershade
+            value: "0"
+          - label: Rollershade (2 motor)
+            value: "1"
+          - label: Rollershade (exterior)
+            value: "2"
+          - label: Rollershade (exterior, 2 motor)
+            value: "3"
+          - label: Drapery
+            value: "4"
+          - label: Awning
+            value: "5"
+          - label: Shutter
+            value: "6"
+          - label: Tilt Blind (tilt only)
+            value: "7"
+          - label: Tilt Blind (lift and tilt)
+            value: "8"
+          - label: Projector Screen
+            value: "9"
 sequence:
   - alias: Get IEEE address of the device
     variables:
@@ -65,7 +81,7 @@ sequence:
       cluster_id: 0x0102
       manufacturer: 0x10F2
       attribute: 0x0000
-      value: "{{ window_covering_type }}"
+      value: "{{ window_covering_type | int }}"
 
     # Step 2
     # Prepare calibration by setting these values:
@@ -261,7 +277,7 @@ sequence:
 
   - alias: "Step 8: set tilt times"
     repeat:
-      count: "{{ 1 if window_covering_type == 8 else 0 }}"
+      count: "{{ 1 if window_covering_type == '8' else 0 }}"
       sequence:
         - action: zha_toolkit.attr_write
           data:
