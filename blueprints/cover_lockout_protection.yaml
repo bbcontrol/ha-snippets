@@ -1,0 +1,40 @@
+blueprint:
+  name: Cover lockout protection
+  description: Prevents the cover from being closed when the door is open
+  domain: automation
+  input:
+    cover:
+      name: Cover
+      selector:
+        entity:
+          domain: cover
+    door_sensor:
+      name: Door sensor
+      selector:
+        entity:
+          domain: binary_sensor
+    enable_helper:
+      name: Enable helper
+      description: Helper `input_boolean` to enable/disable the automation
+      default: input_boolean.cover_lockout_protection
+      selector:
+        entity:
+          domain: input_boolean
+mode: single
+trigger:
+  - platform: state
+    entity_id: !input cover
+    to: "closing"
+condition:
+  - condition: state
+    entity_id: !input enable_helper
+    state: "on"
+  - condition: state
+    entity_id: !input door_sensor
+    state: "on"
+action:
+  - action: cover.stop_cover
+    metadata: {}
+    data: {}
+    target:
+      entity_id: !input cover
