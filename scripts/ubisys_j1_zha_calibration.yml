@@ -64,6 +64,12 @@ fields:
             value: "8"
           - label: Projector Screen
             value: "9"
+  motor_reversed:
+    required: true
+    name: Motor direction reversed
+    default: false
+    selector:
+      boolean:
 sequence:
   - alias: Get IEEE address of the device
     variables:
@@ -181,7 +187,7 @@ sequence:
       endpoint_id: 1
       cluster_id: 0x0102
       attribute: 0x0017
-      value: 0x02
+      value: "{{ 3 if motor_reversed else 2 }}"
 
     # Step 4
     # Send the “move down” command and “stop” after a few centimeters.
@@ -309,7 +315,7 @@ sequence:
             endpoint_id: 1
             cluster_id: 0x0102
             attribute: 0x0017
-            value: 0x00
+            value: "{{ 1 if motor_reversed else 0 }}"
         - delay: 2
           alias: Wait for calibration mode end to propagate
 
