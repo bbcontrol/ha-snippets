@@ -1,8 +1,8 @@
-alias: Lights off
+alias: Open all covers
 sequence:
   - repeat:
       sequence:
-        - service: light.turn_off
+        - service: cover.open_cover
           metadata: {}
           data: {}
           target:
@@ -18,11 +18,11 @@ sequence:
                 milliseconds: 200
       for_each: >-
         [
-        {% for light in states.light | map(attribute='entity_id') | select('is_state', 'on') | list -%}
-          {% if state_attr(light, 'entity_id') == None and not is_state_attr(light, 'type', 'browser_mod') -%}
-            '{{ light }}',
+        {% for cover in states.cover | map(attribute='entity_id') | list -%}
+          {% if state_attr(cover, 'entity_id') == None and (state_attr(cover, 'current_position') < 100 or state_attr(cover, 'current_tilt_position') < 100) -%}
+            '{{ cover }}',
           {% endif -%}
         {% endfor %}
         ]
 description: ""
-icon: mdi:lightbulb-off-outline
+icon: mdi:blinds-horizontal
