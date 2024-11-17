@@ -1,0 +1,172 @@
+blueprint:
+  name: Scene Cycle Controller
+  description: >
+    Controls multiple lights using a set of scenes. A primary button cycles through scenes (excluding motion scenes).
+    Optional PIR or presence sensors trigger a motion scene with auto-off functionality. Scenes reset to the beginning 
+    if lights are turned off by other means (e.g., central light-off command).
+  domain: automation
+  input:
+    cycle_button:
+      name: Cycle button
+      description: Button to cycle through scenes.
+      selector:
+        entity:
+          domain: binary_sensor
+    off_button:
+      name: Off button
+      description: Button to activate the "off" scene.
+      selector:
+        entity:
+          domain: binary_sensor
+    pir_sensor:
+      name: Motion or presence sensor (optional)
+      description: Optional motion or presence sensor for triggering a motion scene.
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class: motion | presence
+      default: null
+    illuminance_sensor:
+      name: Illuminance sensor (optional)
+      description: Sensor to check room brightness for PIR-triggered lighting.
+      selector:
+        entity:
+          domain: sensor
+          device_class: illuminance
+      default: null
+    illuminance_threshold:
+      name: Illuminance threshold
+      description: Maximum illuminance level to allow automatic lighting.
+      default: 50
+      selector:
+        number:
+          min: 0
+          max: 1000
+          unit_of_measurement: lx
+    scenes:
+      name: Scenes
+      description: List of scenes to cycle through (excluding motion and off scenes).
+      selector:
+        entity:
+          domain: scene
+          multiple: true
+    motion_scene:
+      name: Motion scene (optional)
+      description: Scene to activate when motion is detected.
+      selector:
+        entity:
+          domain: scene
+      default: null
+    off_scene:
+      name: Off scene
+      description: Scene representing all lights off.
+      selector:
+        entity:
+          domain: scene
+    auto_off_delay:
+      name: Auto-off delay
+      description: Time in seconds before the motion scene is turned off automatically.
+      default: 300
+      selector:
+        number:
+          min: 0
+          max: 3600
+          unit_of_measurement: seconds
+
+mode: restart
+
+variables:
+  cycle_button: !input cycle_button
+  off_button: !input off_button
+  pir_sensor: !input pir_sensor
+  illuminance_sensor: !input illuminance_sensor
+  illuminance_threshold: !input illuminance_threshold
+  scenes: !input scenes
+  motion_scene: !input motion_scene
+  off_scene: !input off_scene
+  auto_off_delay: !input auto_off_delay
+  cycle_scenes: >
+    {{ scenes | reject('eq', motion_scene) | list }}
+
+trigger:
+  - platform: state
+    entity_id: !input cycle_button
+    to: "on"
+  - platform: state
+    entity_id: !input off_button
+    to: "on"
+  - platform: state
+    entity_id: !input pir_sensor
+    to: "on"
+  - platform: state
+    entity_id: !input off_scene
+
+action:
+  - choose:
+      # Handle cycle button: cycle through scenes (excluding motion scene)
+      - conditions:
+          - condition: trigger
+            id: cycle_button
+        sequence:
+          - variables:
+              current_scene: >
+                {% set most_recent_scene = cycle_scenes | map('states', 'scene') | sort(reverse=true) | first %}
+                {{ cycle_scenes.index(most_recent_scene) if most_recent_scene in cycle_scenes else -1 }}
+              next_scene: >
+                {% set scene_count = cycle_scenes | length %}
+                {{ (current_scene + 1) % scene_count if current_scene >= 0 else 0 }}
+          - service: scene.turn_on
+            target:
+              entity_id: "{{ cycle_scenes[next_scene] }}"
+
+      # Handle off button: activate "off" scene
+      - conditions:
+          - condition: trigger
+            id: off_button
+        sequence:
+          - service: scene.turn_on
+            target:
+              entity_id: !input off_scene
+
+      # Handle motion detection: activate motion scene (if defined)
+      - conditions:
+          - condition: template
+            value_template: "{{ pir_sensor is not none and trigger.entity_id == pir_sensor }}"
+          - condition: or
+            conditions:
+              - condition: template
+                value_template: "{{ illuminance_sensor is none }}"
+              - condition: template
+                value_template: >
+                  {{ states(illuminance_sensor) | int <= illuminance_threshold }}
+        sequence:
+          - service: scene.turn_on
+            target:
+              entity_id: !input motion_scene
+          - wait_for_trigger:
+              - platform: state
+                entity_id: !input pir_sensor
+                to: "off"
+            timeout: "{{ auto_off_delay }}"
+          - choose:
+              - conditions:
+                  - condition: state
+                    entity_id: !input cycle_button
+                    state: "off"
+                sequence:
+                  - service: scene.turn_on
+                    target:
+                      entity_id: !input off_scene
+
+      # Reset scene cycling if off scene was activated (by any means)
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ states(off_scene) is not none and
+                 (as_timestamp(now()) - as_timestamp(states(off_scene).last_updated)) < 60 }}
+        sequence:
+          - variables:
+              next_scene: 0
+          - service: scene.turn_on
+            target:
+              entity_id: "{{ cycle_scenes[next_scene] }}"
