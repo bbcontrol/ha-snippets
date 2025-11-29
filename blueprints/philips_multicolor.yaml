@@ -1,0 +1,210 @@
+blueprint:
+  name: Philips Hue Gradient / Effect (ZHA Multicolor Command)
+  author: Tomas Bedrich (BB Control)
+  homeassistant:
+    min_version: 2025.11.0
+  description: >-
+    Send a Philips Hue multicolor (gradient scene or Hue effect) command via ZHA.
+    Uses cluster_id 0xFC03, command 0x0000 (server) with the proper payload.
+    Choose either a gradient scene OR a Hue effect. If both are provided, the gradient scene wins.
+    See: https://github.com/zigpy/zha-device-handlers/pull/3664
+  domain: script
+  input:
+    light_device:
+      name: Hue Light (Philips / Signify)
+      description: Select a Philips Hue light paired with ZHA that supports the multicolor cluster (0xFC03).
+      selector:
+        device:
+          integration: zha
+    scene_or_effect:
+      name: Gradient Scene or Hue Effect
+      description: 'Select either a gradient scene or a Hue effect. Effects are prefixed with "Effect: ".'
+      selector:
+        select:
+          options:
+            - label: Blossom
+              value: "50010400135000000039d553d2955ba5287a9f697e25fb802800"
+            - label: Crocus
+              value: "50010400135000000050389322f97f2b597343764cc664282800"
+            - label: Precious
+              value: "5001040013500000007fa8838bb9789a786d7577499a773f2800"
+            - label: Narcissa
+              value: "500104001350000000b0498a5c0a888fea89eb0b7ee15c742800"
+            - label: Beginnings
+              value: "500104001350000000b3474def153e2ad42e98232c7483292800"
+            - label: First Light
+              value: "500104001350000000b28b7900e959d3f648a614389723362800"
+            - label: Horizon
+              value: "500104001350000000488b7d6cbb750c6642f1133cc4033c2800"
+            - label: Valley Dawn
+              value: "500104001350000000c1aa7de03a7a8ce861c7c4410d94412800"
+            - label: Sunflare
+              value: "500104001350000000d0aa7d787a7daf197590154d6c14472800"
+            - label: Emerald Flutter
+              value: "5001040013500000006a933977e34bb0d35e916468f246792800"
+            - label: Memento
+              value: "500104001350000000f87318a3e31962331ec3532cceea892800"
+            - label: Resplendent
+              value: "500104001350000000278b6d257a58efe84204273a35f5252800"
+            - label: Scarlet Dream
+              value: "500104001350000000b02c654e4c5b45ab51fb0950d6c84d2800"
+            - label: Lovebirds
+              value: "50010400135000000053ab84ea1a7e35fb7c098c73994c772800"
+            - label: Smitten
+              value: "500104001350000000fe7b70a74b6aa42b65811b60550a592800"
+            - label: Glitz and Glam
+              value: "500104001350000000cc193cb9b845bad9521d1c77bf6c712800"
+            - label: Promise
+              value: "500104001350000000258b606eca6b28d6382db445df26812800"
+            - label: Ruby Romance
+              value: "5001040013500000000edb63cbcb6bac0c670b2d58204e572800"
+            - label: City of Love
+              value: "50010400135000000055830e5cf31b6aa339d2ec70908b802800"
+            - label: Honolulu
+              value: "500104001350000000dbfd59866c6378ec6c45cc765c0a822800"
+            - label: Savanna Sunset
+              value: "50010400135000000005ae65c38c6c6b4b7573ca820fc9832800"
+            - label: Golden Pond
+              value: "5001040013500000007e4a88cc4a8605db8728ec7b666c792800"
+            - label: Runy Glow
+              value: "50010400135000000095bb53ac2a56eb99591e095c54985e2800"
+            - label: Tropical Twilight
+              value: "500104001350000000408523a0b636e777524c0a71a76c6e2800"
+            - label: Miami
+              value: "50010400135000000022ec61e6d94902d83766c3305a43182800"
+            - label: Cancun
+              value: "500104001350000000a7eb54673d55944e6265fd6e26bb842800"
+            - label: Rio
+              value: "500104001350000000a26526088c51a74b58ea6b7137ba892800"
+            - label: Chinatown
+              value: "500104001350000000b33e5b408e59d90d5b4c6c6360ac792800"
+            - label: Ibiza
+              value: "500104001350000000014d6d708c73827b7b6c7a8887f98a2800"
+            - label: Osaka
+              value: "500104001350000000d649510b5c4deb7c5d8b6d6d2b9b802800"
+            - label: Tokyo
+              value: "500104001350000000d1c311665331d3451fd59c4e394c7b2800"
+            - label: Motown
+              value: "50010400135000000055730e5db3156623306c533d7a235c2800"
+            - label: Fairfax
+              value: "50010400135000000072d34a3664477d7a61581d5fc08e5b2800"
+            - label: Galaxy
+              value: "500104001350000000a6cb638b2a4f8cfa549bb9549ff73a2800"
+            - label: Starlight
+              value: "5001040013500000008d897134a9653ec854d2963ed1d4282800"
+            - label: Blood Moon
+              value: "500104001350000000202a6987c8599ee647ec632779c3142800"
+            - label: Artic Aurora
+              value: "50010400135000000082548922057511046571c32d5b93192800"
+            - label: Moonlight
+              value: "50010400135000000055730e5e9320c1832e96243ebec7652800"
+            - label: Nebula
+              value: "50010400135000000026c852e106460d653ee745342964142800"
+            - label: Sundown
+              value: "500104001350000000f37c68157c6d8efa755ac5512e24332800"
+            - label: Blue Lagoon
+              value: "50010400135000000088c3623975699ea672a0c8831ada6d2800"
+            - label: Palm Beach
+              value: "5001040013500000005ec4679ba56077f85a80ea64639c6a2800"
+            - label: Lake Placid
+              value: "5001040013500000002eab69239a692d996552c54c39743a2800"
+            - label: Mountain Breeze
+              value: "500104001350000000df843d2355419195465a98674ca97b2800"
+            - label: Lake Mist
+              value: "500104001350000000e3286f39b96859f86266e54ded943f2800"
+            - label: Ocean Dawn
+              value: "5001040013500000005cf9779da97105b96b07485e32564a2800"
+            - label: Frosty Dawn
+              value: "5001040013500000006d6883bca87e3029758ec9722d6a722800"
+            - label: Sunday Morning
+              value: "5001040013500000002c586dc6f87345997c63f983f777892800"
+            - label: Emerald Isle
+              value: "500104001350000000e535628dc57ed2667d8b687d1e2a812800"
+            - label: Spring Blossom
+              value: "500104001350000000a8b75fd0c75826b851a7094d305b652800"
+            - label: Midsummer Sun
+              value: "500104001350000000002984799984dd29848eba836c0b7f2800"
+            - label: Autumn Gold
+              value: "500104001350000000435a7817aa7ba3f979a8a981f3c9852800"
+            - label: Spring Lake
+              value: "5001040013500000004a976d3347736e677561b77a4b07812800"
+            - label: Winter Mountain
+              value: "5001040013500000002c555c68c55d7c555ef165606136622800"
+            - label: Midwinter
+              value: "500104001350000000bda5532c554dbd254cd5a4428d94392800"
+            - label: Amber Bloom
+              value: "500104001350000000739d67f2bc7372ec78a0ab78be8a6f2800"
+            - label: Lily
+              value: "5001040013500000009cfc76c5ab793d4a6a1a9b586b9c522800"
+            - label: Painted Sky
+              value: "500104001350000000d1c424c3d63783384c3f7a6a83bd6d2800"
+            - label: Winter Beauty
+              value: "500104001350000000e2335ea7b4942467952db986a7ab7b2800"
+            - label: Orange Fields
+              value: "500104001350000000409c69694c79eafa88498a8fb867aa2800"
+            - label: Forest Adventure
+              value: "50010400135000000023999bbd76b363d4b674d3415fb3222800"
+            - label: Blue Planet
+              value: "50010400135000000037a7a3a403b489737b2b746e6873362800"
+            - label: Soho
+              value: "500104001350000000c52c4e220b6eed8a53d404192b04782800"
+            - label: Vapor Wave
+              value: "500104001350000000e1c32401251acb183ac31b8051ea842800"
+            - label: Magneto
+              value: "50010400135000000077b3286d9340b9e3662d99943c9b852800"
+            - label: Tyrell
+              value: "500104001350000000ef4419a898370ea84698353574434e2800"
+            - label: Disturbia
+              value: "50010400135000000084f371a4845e6998388c3b4f57ce582800"
+            - label: HAL
+              value: "50010400135000000075f351a6244cf6dc5d480c658cda862800"
+            - label: Golden Star
+              value: "5001040013500000007a4a8702eb8372ac7892cd61d51e5c2800"
+            - label: Under the Tree
+              value: "5001040013500000001de498b9a3cc0c9b8563bb6cc1ae5d2800"
+            - label: Silent Night
+              value: "5001040013500000009e296a245a6f660a75086b70953b6e2800"
+            - label: Rosy Sparkle
+              value: "500104001350000000810967c63a6cb2aa5ea7094eddd73c2800"
+            - label: Festive Fun
+              value: "5001040013500000005a9318de53123e9414fdcc67839d612800"
+            - label: Colour Burst
+              value: "500104001350000000f2731ff0c6266a6c64246e57d4f98f2800"
+            - label: Crystalline
+              value: "5001040013500000006ea96a92a85e58074e18543d9cf3332800"
+            - label: "Effect: Candle"
+              value: "21000101"
+            - label: "Effect: Fireplace"
+              value: "21000102"
+            - label: "Effect: Colorloop"
+              value: "21000103"
+            - label: "Effect: Sunrise"
+              value: "21000109"
+            - label: "Effect: Sparkle"
+              value: "2100010a"
+            - label: "Effect: Opal"
+              value: "2100010b"
+            - label: "Effect: Glisten"
+              value: "2100010c"
+            - label: "Effect: Stop Hue Effect"
+              value: "200000"
+
+mode: single
+icon: mdi:palette
+alias: philips_multicolor_command
+
+variables:
+  light_device: !input light_device
+  scene_or_effect: !input scene_or_effect
+
+sequence:
+  - alias: Send multicolor command
+    service: zha.issue_zigbee_cluster_command
+    data:
+      ieee: "{{ device_attr(light_device, 'identifiers')|first|last }}"
+      cluster_id: 0xFC03
+      endpoint_id: 11
+      command: 0x0000
+      command_type: server
+      params:
+        data: "{{ scene_or_effect }}"
