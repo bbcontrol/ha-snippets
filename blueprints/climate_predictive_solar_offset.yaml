@@ -1,0 +1,154 @@
+blueprint:
+  name: "Predictive solar heating offset"
+  description: >
+    Reduces thermostat temperature between 0-2°C based on solar heat gain forecast through glazed surfaces.
+
+    ## 🛠 _Forecast.Solar_ Integration Setup
+
+    It is required for the automation to install _Forecast.Solar_ integration and configure it as follows:
+
+     1. **Declination:** For standard, vertical windows set to 90°.
+     2. **Azimuth:** Window orientation: North=0°, East=90°, South=180°, West=270°.
+     3. **Total Watt peak power:** Sum the glass area in the room (m²), multiply by the solar factor (g-value) of the glass, then multiply by the constant 1000.  
+    _Example: 10 m², triple glazing with g=0.55 → 5500 Wp_.
+
+
+    In case of multiple window orientations in one room, create multiple _Forecast.Solar_ sensors and sum them up with a template sensor.
+  domain: automation
+  input:
+    target_climate:
+      name: "Thermostat"
+      description: "The thermostat to be controlled."
+      selector:
+        entity:
+          filter:
+            - domain: climate
+    solar_today:
+      name: "Estimated Energy Production - Today"
+      description: "Select the sensor with this name from _Forecast.Solar_."
+      selector:
+        entity:
+          filter:
+            - integration: forecast_solar
+              device_class: energy
+    solar_tomorrow:
+      name: "Estimated Energy Production - Tomorrow"
+      description: "Select the sensor with this name from _Forecast.Solar_."
+      selector:
+        entity:
+          filter:
+            - integration: forecast_solar
+              device_class: energy
+    offset_storage:
+      name: "Offset storage helper"
+      description: "The automation stores its state here.\nIf you don't have one, create a new `input_number` with: min -5, max 0, step 0.5. **Set it to 0 after creation!**"
+      selector:
+        entity:
+          filter:
+            - domain: input_number
+    threshold_high:
+      name: "High gain (reduction by 2.0°C)"
+      description: >
+        Threshold value for maximum reduction. 
+        Recommended to set at approximately 70-80% of your calculated daily maximum (Wp * 0.008). 
+        Example: If windows transmit max 25 kWh, set to 20 kWh.
+      default: 20
+      selector:
+        number:
+          min: 1
+          max: 100
+          unit_of_measurement: "kWh"
+    threshold_medium:
+      name: "Medium gain (reduction by 1.0°C)"
+      description: >
+        Threshold value for medium reduction.
+        Recommended to set at approximately 40-50% of your daily maximum.
+        Example: With a maximum of 25 kWh, set to approximately 12 kWh.
+      default: 12
+      selector:
+        number:
+          min: 1
+          max: 100
+          unit_of_measurement: "kWh"
+    threshold_low:
+      name: "Low gain (reduction by 0.5°C)"
+      description: >
+        Threshold value for slight reduction during partly cloudy weather. 
+        Recommended to set at approximately 20-25% of your maximum. 
+        Example: With a maximum of 25 kWh, set to approximately 5-6 kWh.
+      default: 6
+      selector:
+        number:
+          min: 1
+          max: 100
+          unit_of_measurement: "kWh"
+    switch_hour:
+      name: "Tomorrow switch time"
+      description: >
+        Hour (0-23) when the automation starts considering tomorrow's forecast instead of today's.
+        For underfloor heating with large delay, set earlier (e.g., 14-16h).
+      default: 16
+      selector:
+        number:
+          min: 0
+          max: 23
+          unit_of_measurement: "h"
+
+mode: restart
+
+trigger:
+  - platform: time_pattern
+    hours: "/1"
+  - platform: state
+    entity_id: !input solar_today
+  - platform: state
+    entity_id: !input solar_tomorrow
+
+variables:
+  climate_entity: !input target_climate
+  solar_today: !input solar_today
+  solar_tomorrow: !input solar_tomorrow
+  offset_helper: !input offset_storage
+  t_high: !input threshold_high
+  t_med: !input threshold_medium
+  t_low: !input threshold_low
+  switch_h: !input switch_hour
+
+  # Logic for selecting the correct forecast
+  is_future_focus: "{{ now().hour >= switch_h }}"
+  solar_value: >
+    {% if is_future_focus %}
+      {{ states(solar_tomorrow) | float(0) }}
+    {% else %}
+      {{ states(solar_today) | float(0) }}
+    {% endif %}
+  
+  # Calculate target offset
+  target_offset: >
+    {% if solar_value >= t_high %} -2.0
+    {% elif solar_value >= t_med %} -1.0
+    {% elif solar_value >= t_low %} -0.5
+    {% else %} 0.0
+    {% endif %}
+
+action:
+  - variables:
+      current_temp: "{{ state_attr(climate_entity, 'temperature') | float }}"
+      applied_offset: "{{ states(offset_helper) | float(0) }}"
+      adjustment: "{{ target_offset - applied_offset }}"
+
+  - if:
+      - condition: template
+        value_template: "{{ adjustment | abs >= 0.5 }}"
+    then:
+      - action: climate.set_temperature
+        target:
+          entity_id: "{{ climate_entity }}"
+        data:
+          temperature: "{{ (current_temp + adjustment) | round(1) }}"
+      
+      - action: input_number.set_value
+        target:
+          entity_id: "{{ offset_helper }}"
+        data:
+          value: "{{ target_offset }}"
