@@ -24,7 +24,7 @@ blueprint:
           filter:
             - domain: climate
     solar_today:
-      name: "Estimated Energy Production - Today"
+      name: "Estimated energy production - today"
       description: "Select the sensor with this name from _Forecast.Solar_."
       selector:
         entity:
@@ -32,7 +32,7 @@ blueprint:
             - integration: forecast_solar
               device_class: energy
     solar_tomorrow:
-      name: "Estimated Energy Production - Tomorrow"
+      name: "Estimated energy production - tomorrow"
       description: "Select the sensor with this name from _Forecast.Solar_."
       selector:
         entity:
